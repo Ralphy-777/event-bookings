@@ -41,6 +41,15 @@ export default function ClientRegister() {
     }, 1000);
   };
 
+  const getErrorMessage = async (res: Response, fallback: string) => {
+    try {
+      const data = await res.json();
+      return data.message || fallback;
+    } catch {
+      return `${fallback} (HTTP ${res.status})`;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -52,10 +61,17 @@ export default function ClientRegister() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ first_name: firstName, last_name: lastName, date_of_birth: dob, address, email, password }),
       });
+      if (!res.ok) {
+        setError(await getErrorMessage(res, 'Registration failed'));
+        return;
+      }
       const data = await res.json();
-      if (res.ok && data.requires_verification) { setPendingEmail(email); setStep('verify'); startCooldown(); }
+      if (data.requires_verification) { setPendingEmail(email); setStep('verify'); startCooldown(); }
       else { setError(data.message || 'Registration failed'); }
-    } catch { setError('Connection error. Please check the deployed backend URL and CORS settings.'); }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Network request failed';
+      setError(`Connection error. ${message}`);
+    }
     finally { setLoading(false); }
   };
 
@@ -70,10 +86,17 @@ export default function ClientRegister() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: pendingEmail, code }),
       });
+      if (!res.ok) {
+        setError(await getErrorMessage(res, 'Verification failed'));
+        return;
+      }
       const data = await res.json();
-      if (res.ok && data.access) { localStorage.setItem('clientToken', data.access); setStep('success'); setTimeout(() => router.push('/'), 2500); }
+      if (data.access) { localStorage.setItem('clientToken', data.access); setStep('success'); setTimeout(() => router.push('/'), 2500); }
       else { setError(data.message || 'Verification failed'); }
-    } catch { setError('Connection error. Please check the deployed backend URL and CORS settings.'); }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Network request failed';
+      setError(`Connection error. ${message}`);
+    }
     finally { setLoading(false); }
   };
 
