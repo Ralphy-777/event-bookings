@@ -1,36 +1,24 @@
-const DEFAULT_API_BASE = 'https://event-backend-5-v9tx.onrender.com/api/user';
+export const API_BASE =
+  (process.env.NEXT_PUBLIC_API_BASE || '').trim().replace(/\/$/, '') ||
+  'https://event-backend-5-v9tx.onrender.com/api/user';
 
-function isLocalApiUrl(value: string): boolean {
-  try {
-    const { hostname } = new URL(value);
-    return hostname === 'localhost' || hostname === '127.0.0.1';
-  } catch {
-    return false;
-  }
-}
-
-function isLocalFrontendHost(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-}
-
-function resolveApiBase(): string {
-  const configuredBase = (process.env.NEXT_PUBLIC_API_BASE || '').trim().replace(/\/$/, '');
-  if (!configuredBase) return DEFAULT_API_BASE;
-  if (isLocalApiUrl(configuredBase) && !isLocalFrontendHost()) return DEFAULT_API_BASE;
-  return configuredBase;
-}
-
-export const API_BASE = resolveApiBase();
-
-export const APP_BASE = typeof window === 'undefined'
-  ? 'https://event-bookings-mocmuxl39-ralphy-777s-projects.vercel.app'
-  : window.location.origin;
+export const APP_BASE =
+  typeof window === 'undefined'
+    ? 'https://event-bookings-git-main-ralphy-777s-projects.vercel.app'
+    : window.location.origin;
 
 export const WS_BASE = API_BASE
   .replace(/\/api\/user$/, '')
   .replace(/^http:\/\//, 'ws://')
   .replace(/^https:\/\//, 'wss://');
+
+// Keep Render backend alive — ping every 10 minutes to prevent spin-down
+if (typeof window !== 'undefined') {
+  const BACKEND_ROOT = API_BASE.replace(/\/api\/user$/, '');
+  const ping = () => fetch(`${BACKEND_ROOT}/api/user/event-types/`).catch(() => {});
+  ping();
+  setInterval(ping, 10 * 60 * 1000);
+}
 
 async function refreshAccessToken(tokenKey: 'clientToken' | 'organizerToken'): Promise<string | null> {
   const refreshKey = tokenKey === 'clientToken' ? 'clientRefresh' : 'organizerRefresh';

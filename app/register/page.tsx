@@ -8,6 +8,19 @@ const iStyle = { background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(1
 const iCls = "w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-sky-500 transition-all text-sm";
 const lCls = "block text-xs font-bold text-sky-400 uppercase tracking-widest mb-2";
 
+async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(30000) });
+      return res;
+    } catch (err) {
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  throw new Error('Failed after retries');
+}
+
 export default function ClientRegister() {
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
@@ -19,6 +32,7 @@ export default function ClientRegister() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState('Creating Account...');
   const [step, setStep] = useState<'form' | 'verify' | 'success'>('form');
   const [pendingEmail, setPendingEmail] = useState('');
   const [code, setCode] = useState('');
@@ -55,8 +69,13 @@ export default function ClientRegister() {
     setError('');
     if (password !== confirmPassword) { setError('Passwords do not match'); return; }
     setLoading(true);
+    setLoadingMsg('Creating Account...');
+
+    // Show "waking up server" message after 5s if still loading
+    const wakeTimer = setTimeout(() => setLoadingMsg('Waking up server, please wait...'), 5000);
+
     try {
-      const res = await fetch(`${API_BASE}/register/`, {
+      const res = await fetchWithRetry(`${API_BASE}/register/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ first_name: firstName, last_name: lastName, date_of_birth: dob, address, email, password }),
@@ -69,10 +88,17 @@ export default function ClientRegister() {
       if (data.requires_verification) { setPendingEmail(email); setStep('verify'); startCooldown(); }
       else { setError(data.message || 'Registration failed'); }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Network request failed';
-      setError(`Connection error. ${message}`);
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('timeout') || msg.includes('fetch') || msg.includes('network') || msg.toLowerCase().includes('failed')) {
+        setError('The server is starting up. Please wait 30 seconds and try again.');
+      } else {
+        setError(`Connection error. ${msg}`);
+      }
+    } finally {
+      clearTimeout(wakeTimer);
+      setLoading(false);
+      setLoadingMsg('Creating Account...');
     }
-    finally { setLoading(false); }
   };
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -81,7 +107,7 @@ export default function ClientRegister() {
     if (code.length !== 6) { setError('Enter the 6-digit code'); return; }
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/verify-email/`, {
+      const res = await fetchWithRetry(`${API_BASE}/verify-email/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: pendingEmail, code }),
@@ -91,25 +117,32 @@ export default function ClientRegister() {
         return;
       }
       const data = await res.json();
-      if (data.access) { localStorage.setItem('clientToken', data.access); setStep('success'); setTimeout(() => router.push('/'), 2500); }
-      else { setError(data.message || 'Verification failed'); }
+      if (data.access) {
+        localStorage.setItem('clientToken', data.access);
+        if (data.refresh) localStorage.setItem('clientRefresh', data.refresh);
+        setStep('success');
+        setTimeout(() => router.push('/'), 2500);
+      } else {
+        setError(data.message || 'Verification failed');
+      }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Network request failed';
-      setError(`Connection error. ${message}`);
+      const msg = err instanceof Error ? err.message : '';
+      setError(msg.includes('timeout') ? 'Server timeout. Please try again.' : `Connection error. ${msg}`);
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
   const handleResend = async () => {
     setResendMsg(''); setError(''); setResendLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/resend-verification-code/`, {
+      const res = await fetchWithRetry(`${API_BASE}/resend-verification-code/`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: pendingEmail }),
       });
       const data = await res.json();
       setResendMsg(data.message); setCode(''); startCooldown();
-    } catch { setError('Connection error'); }
+    } catch { setError('Connection error. Please try again.'); }
     finally { setResendLoading(false); }
   };
 
@@ -170,7 +203,7 @@ export default function ClientRegister() {
             <form onSubmit={handleVerify} className="space-y-4">
               <div>
                 <label className={lCls}>Verification Code</label>
-                <input type="text" value={code} onChange={e => setCode(e.target.value)}
+                <input type="text" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                   maxLength={6} required autoFocus
                   className="w-full px-4 py-4 rounded-xl text-center text-3xl tracking-[0.5em] font-black text-white outline-none focus:ring-2 focus:ring-sky-500"
                   style={iStyle} placeholder="000000" />
@@ -179,7 +212,12 @@ export default function ClientRegister() {
               {resendMsg && <div className="px-4 py-3 rounded-xl text-xs font-semibold" style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.25)', color: '#7dd3fc' }}>{resendMsg}</div>}
               <button type="submit" disabled={loading} className={btnPrimary}
                 style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)', boxShadow: '0 4px 20px rgba(14,165,233,0.3)' }}>
-                {loading ? 'Verifying...' : 'Verify & Continue'}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Verifying...
+                  </span>
+                ) : 'Verify & Continue'}
               </button>
               <button type="button" onClick={handleResend} disabled={resendCooldown > 0 || resendLoading}
                 className="w-full text-xs text-sky-400 hover:text-sky-300 disabled:text-slate-600 transition-colors">
@@ -187,7 +225,7 @@ export default function ClientRegister() {
               </button>
               <button type="button" onClick={() => { setStep('form'); setError(''); setCode(''); setResendMsg(''); }}
                 className="w-full text-xs text-slate-500 hover:text-slate-300 transition-colors">
-                Back to registration
+                ← Back to registration
               </button>
             </form>
           </div>
@@ -259,12 +297,10 @@ export default function ClientRegister() {
             <div className="col-span-1 sm:col-span-2">
               <button type="submit" disabled={loading} className={btnPrimary}
                 style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)', boxShadow: '0 4px 20px rgba(14,165,233,0.3)' }}>
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Creating Account...
-                  </span>
-                ) : 'Create Account'}
+                <span className="flex items-center justify-center gap-2">
+                  {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  {loading ? loadingMsg : 'Create Account'}
+                </span>
               </button>
             </div>
           </form>
