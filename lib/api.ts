@@ -14,8 +14,7 @@ export const WS_BASE = API_BASE
 
 // Keep Render backend alive — ping every 10 minutes to prevent spin-down
 if (typeof window !== 'undefined') {
-  const BACKEND_ROOT = API_BASE.replace(/\/api\/user$/, '');
-  const ping = () => fetch(`${BACKEND_ROOT}/api/user/event-types/`).catch(() => {});
+  const ping = () => fetch(`${API_BASE}/event-types/`).catch(() => {});
   ping();
   setInterval(ping, 10 * 60 * 1000);
 }

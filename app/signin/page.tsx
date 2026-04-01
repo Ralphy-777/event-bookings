@@ -65,12 +65,25 @@ export default function SignIn() {
     return `${Math.floor(r / 60)}:${(r % 60).toString().padStart(2, '0')}`;
   };
 
+  const fetchWithRetry = async (url: string, options: RequestInit, retries = 2): Promise<Response> => {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        return await fetch(url, { ...options, signal: AbortSignal.timeout(30000) });
+      } catch (err) {
+        if (i === retries) throw err;
+        setError('Server is waking up, retrying...');
+        await new Promise(r => setTimeout(r, 3000));
+      }
+    }
+    throw new Error('Failed after retries');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLocked) { setError(`Account locked. Try again in ${getRemainingTime()}`); return; }
     setError(''); setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/login/`, {
+      const res = await fetchWithRetry(`${API_BASE}/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -85,11 +98,13 @@ export default function SignIn() {
         if (data.is_organizer) {
           localStorage.removeItem('clientToken');
           localStorage.setItem('organizerToken', data.access);
+          if (data.refresh) localStorage.setItem('organizerRefresh', data.refresh);
           localStorage.setItem('isOrganizer', 'true');
           router.push('/organizer-dashboard');
         } else {
           localStorage.removeItem('organizerToken');
           localStorage.setItem('clientToken', data.access);
+          if (data.refresh) localStorage.setItem('clientRefresh', data.refresh);
           try {
             const profileRes = await fetch(`${API_BASE}/profile/`, {
               headers: { Authorization: `Bearer ${data.access}` },
@@ -104,7 +119,7 @@ export default function SignIn() {
           router.push('/');
         }
       } else {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         const newAttempts = loginAttempts + 1;
         setLoginAttempts(newAttempts);
         localStorage.setItem('loginAttempts', newAttempts.toString());
@@ -116,11 +131,16 @@ export default function SignIn() {
           setLockTime(now + 5 * 60 * 1000);
           setError('Too many failed attempts. Account locked for 5 minutes.');
         } else {
-          setError(`Invalid credentials. ${5 - newAttempts} attempts remaining.`);
+          setError(data.message || `Invalid credentials. ${5 - newAttempts} attempt${5 - newAttempts !== 1 ? 's' : ''} remaining.`);
         }
       }
-    } catch {
-      setError('Connection error');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('timeout') || msg.includes('fetch') || msg.includes('Failed')) {
+        setError('Server is starting up. Please wait a moment and try again.');
+      } else {
+        setError('Connection error. Please check your internet and try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -136,21 +156,18 @@ export default function SignIn() {
   const handleForgotSendCode = async () => {
     setForgotError(''); setForgotMsg(''); setForgotLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/forgot-password/`, {
+      const res = await fetchWithRetry(`${API_BASE}/forgot-password/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setForgotError(data.message || 'Email not found.');
-        return;
-      }
+      if (!res.ok) { setForgotError(data.message || 'Email not found.'); return; }
       setForgotMsg(data.message);
       setForgotStep('code');
       setResendCooldown(60);
     } catch {
-      setForgotError('Connection error');
+      setForgotError('Connection error. Please try again.');
     } finally {
       setForgotLoading(false);
     }
@@ -160,19 +177,16 @@ export default function SignIn() {
     if (forgotCode.length !== 6) { setForgotError('Enter the 6-digit code'); return; }
     setForgotError(''); setForgotLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/verify-reset-code/`, {
+      const res = await fetchWithRetry(`${API_BASE}/verify-reset-code/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail, code: forgotCode }),
       });
       const data = await res.json();
-      if (res.ok && data.valid) {
-        setForgotStep('newpass');
-      } else {
-        setForgotError(data.message || 'Invalid code');
-      }
+      if (res.ok && data.valid) { setForgotStep('newpass'); }
+      else { setForgotError(data.message || 'Invalid code'); }
     } catch {
-      setForgotError('Connection error');
+      setForgotError('Connection error. Please try again.');
     } finally {
       setForgotLoading(false);
     }
@@ -184,7 +198,7 @@ export default function SignIn() {
     if (newPassword.length < 6) { setForgotError('Password must be at least 6 characters'); return; }
     setForgotLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/reset-password/`, {
+      const res = await fetchWithRetry(`${API_BASE}/reset-password/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail, code: forgotCode, new_password: newPassword }),
@@ -201,7 +215,7 @@ export default function SignIn() {
         setForgotError(data.message || 'Reset failed');
       }
     } catch {
-      setForgotError('Connection error');
+      setForgotError('Connection error. Please try again.');
     } finally {
       setForgotLoading(false);
     }
