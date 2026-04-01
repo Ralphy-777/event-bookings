@@ -26,7 +26,12 @@ interface MobileNavProps {
   notificationTokenKey?: string;
 }
 
-export default function MobileNav({ brand = 'EventPro', links, showNotification = false, notificationTokenKey = 'clientToken' }: MobileNavProps) {
+export default function MobileNav({
+  brand = 'EventPro',
+  links,
+  showNotification = false,
+  notificationTokenKey = 'clientToken',
+}: MobileNavProps) {
   const [dropdownOpen, setDropdownOpen] = useState<number | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +45,10 @@ export default function MobileNav({ brand = 'EventPro', links, showNotification 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const hlStyle = { background: 'linear-gradient(135deg, #0ea5e9, #0369a1)', boxShadow: '0 4px 15px rgba(14,165,233,0.3)' };
+  const hlStyle = {
+    background: 'linear-gradient(135deg, #0ea5e9, #0369a1)',
+    boxShadow: '0 4px 15px rgba(14,165,233,0.3)',
+  };
 
   const renderLink = (link: NavLink, i: number) => {
     if (link.dropdown) {
@@ -59,13 +67,12 @@ export default function MobileNav({ brand = 'EventPro', links, showNotification 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-
           {isOpen && (
             <div
               className="absolute right-0 top-full mt-2 w-48 rounded-2xl overflow-hidden shadow-2xl z-50"
               style={{ background: 'rgba(10,22,40,0.98)', border: '1px solid rgba(14,165,233,0.2)', backdropFilter: 'blur(20px)' }}
             >
-              {link.dropdown.map((item, j) => (
+              {link.dropdown.map((item, j) =>
                 item.href ? (
                   <Link key={j} href={item.href}
                     onClick={() => setDropdownOpen(null)}
@@ -79,7 +86,7 @@ export default function MobileNav({ brand = 'EventPro', links, showNotification 
                     {item.label}
                   </button>
                 )
-              ))}
+              )}
             </div>
           )}
         </div>
@@ -110,7 +117,6 @@ export default function MobileNav({ brand = 'EventPro', links, showNotification 
             style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)' }}>E</div>
           <span className="text-lg font-black text-white">{brand}</span>
         </Link>
-
         <div className="flex items-center gap-1 flex-wrap justify-end">
           {links.map((link, i) => renderLink(link, i))}
           {showNotification && <NotificationBell tokenKey={notificationTokenKey} />}
