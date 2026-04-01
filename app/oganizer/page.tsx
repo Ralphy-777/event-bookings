@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_BASE } from '@/lib/api';
 
 type EventType = {
   id: number;
@@ -26,7 +27,7 @@ export default function OrganizerDashboard() {
 
     const fetchPendingEvents = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/organizer/pending-events/', {
+        const res = await fetch(`${API_BASE.replace(/\/user$/, '')}/organizer/pending-events/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

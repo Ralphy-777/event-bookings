@@ -55,7 +55,7 @@ export default function ClientRegister() {
       const data = await res.json();
       if (res.ok && data.requires_verification) { setPendingEmail(email); setStep('verify'); startCooldown(); }
       else { setError(data.message || 'Registration failed'); }
-    } catch { setError('Connection error - Make sure backend is running on port 8000'); }
+    } catch { setError('Connection error. Please check the deployed backend URL and CORS settings.'); }
     finally { setLoading(false); }
   };
 
@@ -73,7 +73,7 @@ export default function ClientRegister() {
       const data = await res.json();
       if (res.ok && data.access) { localStorage.setItem('clientToken', data.access); setStep('success'); setTimeout(() => router.push('/'), 2500); }
       else { setError(data.message || 'Verification failed'); }
-    } catch { setError('Connection error - Make sure backend is running on port 8000'); }
+    } catch { setError('Connection error. Please check the deployed backend URL and CORS settings.'); }
     finally { setLoading(false); }
   };
 

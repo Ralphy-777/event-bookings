@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-
-const WS_BASE = 'ws://localhost:8000';
+import { WS_BASE } from '@/lib/api';
 
 export function useRealtimeRefresh(
   tokenKey: 'clientToken' | 'organizerToken',

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
+import { API_BASE, APP_BASE } from '@/lib/api';
 
 const MAX_ROOMS = 5;
 const VENUE_LOCATION =
@@ -45,7 +46,7 @@ export default function ClientDashboard() {
     const token = localStorage.getItem('clientToken');
 
     fetch(
-      `http://localhost:8000/api/user/client/check-availability/?date=${date}`,
+      `${API_BASE}/client/check-availability/?date=${date}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -67,7 +68,7 @@ export default function ClientDashboard() {
   }, [eventType, capacity, date]);
 
   const generateConcertQR = async (generatedEventId: string) => {
-    const paymentURL = `http://localhost:3000/ticket-payment?eventId=${generatedEventId}`;
+    const paymentURL = `${APP_BASE}/ticket-payment?eventId=${generatedEventId}`;
     const qr = await QRCode.toDataURL(paymentURL);
     setQrCode(qr);
   };
@@ -94,7 +95,7 @@ export default function ClientDashboard() {
 
     try {
       const token = localStorage.getItem('clientToken');
-      const response = await fetch('http://localhost:8000/api/user/bookings/create/', {
+      const response = await fetch(`${API_BASE}/bookings/create/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

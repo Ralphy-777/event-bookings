@@ -1,4 +1,36 @@
-export const API_BASE = 'http://localhost:8000/api/user';
+const DEFAULT_API_BASE = 'https://event-backend-5-v9tx.onrender.com/api/user';
+
+function isLocalApiUrl(value: string): boolean {
+  try {
+    const { hostname } = new URL(value);
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+function isLocalFrontendHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+}
+
+function resolveApiBase(): string {
+  const configuredBase = (process.env.NEXT_PUBLIC_API_BASE || '').trim().replace(/\/$/, '');
+  if (!configuredBase) return DEFAULT_API_BASE;
+  if (isLocalApiUrl(configuredBase) && !isLocalFrontendHost()) return DEFAULT_API_BASE;
+  return configuredBase;
+}
+
+export const API_BASE = resolveApiBase();
+
+export const APP_BASE = typeof window === 'undefined'
+  ? 'https://event-bookings-mocmuxl39-ralphy-777s-projects.vercel.app'
+  : window.location.origin;
+
+export const WS_BASE = API_BASE
+  .replace(/\/api\/user$/, '')
+  .replace(/^http:\/\//, 'ws://')
+  .replace(/^https:\/\//, 'wss://');
 
 async function refreshAccessToken(tokenKey: 'clientToken' | 'organizerToken'): Promise<string | null> {
   const refreshKey = tokenKey === 'clientToken' ? 'clientRefresh' : 'organizerRefresh';
@@ -22,7 +54,7 @@ export async function apiFetch(
   options: RequestInit = {},
   tokenKey: 'clientToken' | 'organizerToken' = 'clientToken'
 ): Promise<Response> {
-  let token = localStorage.getItem(tokenKey);
+  const token = localStorage.getItem(tokenKey);
   const headers = { ...(options.headers || {}), Authorization: `Bearer ${token}` } as Record<string, string>;
   if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
 

@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { API_BASE } from '@/lib/api';
-
-const WS_BASE = 'ws://localhost:8000';
+import { API_BASE, WS_BASE } from '@/lib/api';
 
 interface Notif {
   id: number;
