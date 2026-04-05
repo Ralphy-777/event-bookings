@@ -50,7 +50,7 @@ export default function MobileNav({
     boxShadow: '0 4px 15px rgba(14,165,233,0.3)',
   };
 
-  const renderLink = (link: NavLink, i: number) => {
+  const renderDesktopLink = (link: NavLink, i: number) => {
     if (link.dropdown) {
       const isOpen = dropdownOpen === i;
       return (
@@ -108,6 +108,8 @@ export default function MobileNav({
     );
   };
 
+  const renderMobileLink = (_link: NavLink, _i: number) => null;
+
   return (
     <nav className="sticky top-0 z-50 border-b" ref={navRef}
       style={{ background: 'rgba(10,22,40,0.96)', borderColor: 'rgba(14,165,233,0.15)', backdropFilter: 'blur(20px)' }}>
@@ -117,8 +119,15 @@ export default function MobileNav({
             style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)' }}>E</div>
           <span className="text-lg font-black text-white">{brand}</span>
         </Link>
-        <div className="flex items-center gap-1 flex-wrap justify-end">
-          {links.map((link, i) => renderLink(link, i))}
+
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-1">
+          {links.map((link, i) => renderDesktopLink(link, i))}
+          {showNotification && <NotificationBell tokenKey={notificationTokenKey} />}
+        </div>
+
+        {/* Mobile: notification bell only — bottom nav handles navigation */}
+        <div className="flex md:hidden items-center gap-2">
           {showNotification && <NotificationBell tokenKey={notificationTokenKey} />}
         </div>
       </div>
