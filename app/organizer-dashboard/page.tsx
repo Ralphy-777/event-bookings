@@ -8,10 +8,13 @@ import MobileNav from '@/components/MobileNav';
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 interface Booking {
-  id: number; user: string; event_type: string; capacity: number;
+  id: number; user: string; user_email: string; event_type: string; capacity: number;
   date: string; time: string; status: string; payment_status: string;
   payment_method: string; total_amount: number; gcash_reference: string;
   payment_proof: string | null; decline_reason?: string;
+  description: string; event_details: Record<string, string>;
+  special_requests: string; invited_emails: string;
+  whole_day: boolean; time_slot: string; location: string; created_at: string;
 }
 interface ContactMsg {
   id: number; name: string; email: string; subject: string;
@@ -236,26 +239,92 @@ export default function OrganizerDashboard() {
       style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
       <div className="h-1" style={{ background: activeTab === 'pending' ? 'linear-gradient(90deg,#22c55e,#16a34a)' : activeTab === 'confirmed' ? 'linear-gradient(90deg,#0ea5e9,#0369a1)' : 'linear-gradient(90deg,#ef4444,#dc2626)' }} />
       <div className="p-5">
-        <div className="flex items-start justify-between gap-3 mb-3">
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <p className="font-black text-white text-sm">{booking.event_type}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{booking.user}</p>
+            <p className="font-black text-white text-base">{booking.event_type}</p>
+            <p className="text-xs text-sky-400 font-semibold mt-0.5">{booking.user}</p>
+            <p className="text-xs text-slate-500">{booking.user_email}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-xs text-slate-500">{booking.capacity} guests</p>
-            {booking.total_amount > 0 && <p className="text-sm font-black text-sky-400 mt-0.5">₱{Number(booking.total_amount).toLocaleString()}</p>}
+            {booking.total_amount > 0 && <p className="text-lg font-black text-sky-400">₱{Number(booking.total_amount).toLocaleString()}</p>}
+            <p className="text-xs text-slate-500 mt-0.5">#{booking.id}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {[{ label: 'Date', value: formatDate(booking.date) }, { label: 'Time', value: formatTime(booking.time) }].map(item => (
-            <div key={item.label} className="rounded-xl p-2.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* Schedule */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {[
+            { label: 'Date', value: formatDate(booking.date) },
+            { label: 'Time', value: booking.whole_day ? 'Whole Day' : formatTime(booking.time) },
+            { label: 'Guests', value: `${booking.capacity} pax` },
+          ].map(item => (
+            <div key={item.label} className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <p className="text-xs text-sky-500 font-bold">{item.label}</p>
               <p className="text-xs text-white font-semibold mt-0.5">{item.value}</p>
             </div>
           ))}
         </div>
 
+        {/* Event Details (bride/groom/celebrant etc.) */}
+        {booking.event_details && Object.keys(booking.event_details).length > 0 && (
+          <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.15)' }}>
+            <p className="text-xs font-black text-sky-400 uppercase tracking-widest mb-2">Event Details</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              {Object.entries(booking.event_details).map(([key, val]) => (
+                <div key={key}>
+                  <span className="text-xs text-slate-500 capitalize">{key.replace(/_/g, ' ')}: </span>
+                  <span className="text-xs text-white font-semibold capitalize">{val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
+        {booking.description && (
+          <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Description</p>
+            <p className="text-xs text-slate-300 leading-relaxed">{booking.description}</p>
+          </div>
+        )}
+
+        {/* Special Requests */}
+        {booking.special_requests && (
+          <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+            <p className="text-xs font-black text-yellow-400 uppercase tracking-widest mb-1">⚡ Special Requests</p>
+            <p className="text-xs text-slate-300 leading-relaxed">{booking.special_requests}</p>
+          </div>
+        )}
+
+        {/* Location */}
+        {booking.location && (
+          <div className="mb-4 flex items-start gap-2">
+            <svg className="w-3.5 h-3.5 text-sky-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <p className="text-xs text-slate-400">{booking.location}</p>
+          </div>
+        )}
+
+        {/* Invited Emails */}
+        {booking.invited_emails && (
+          <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Invited Guests</p>
+            <div className="flex flex-wrap gap-1">
+              {booking.invited_emails.split(',').filter(e => e.trim()).map((email, i) => (
+                <span key={i} className="px-2 py-0.5 rounded-full text-xs text-sky-300"
+                  style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)' }}>
+                  {email.trim()}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Payment status */}
         <div className="flex items-center gap-2 mb-3">
           <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
             booking.payment_status === 'paid' ? 'text-sky-300 bg-sky-900/40' :

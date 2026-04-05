@@ -253,9 +253,9 @@ export default function ProfilePage() {
                         )}
                         {emailStep === 'verify' && (
                           <div className="space-y-2">
-                            {emailMsg && <p className="text-sky-400 text-xs">Code sent to your current email. Enter it below.</p>}
-                            <input type="text" value={emailCode} onChange={e => setEmailCode(e.target.value)}
-                              maxLength={6}
+                            <p className="text-sky-400 text-xs">A verification code was sent to your <strong>current email</strong> ({userInfo?.email}). Enter it below to confirm the change.</p>
+                            <input type="text" value={emailCode} onChange={e => setEmailCode(e.target.value.replace(/\D/g, ''))}
+                              maxLength={6} placeholder="000000"
                               className="w-full px-4 py-3 rounded-xl border text-center text-2xl tracking-[0.4em] font-black text-white outline-none focus:ring-2 focus:ring-sky-500"
                               style={iStyle} />
                             {emailErr && <p className="text-red-400 text-xs">{emailErr}</p>}
@@ -265,18 +265,21 @@ export default function ProfilePage() {
                                 style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)' }}>
                                 {emailLoading ? 'Verifying...' : 'Verify & Save'}
                               </button>
-                              <button type="button" onClick={() => setEmailStep('input')}
+                              <button type="button" onClick={() => { setEmailStep('idle'); setEmailCode(''); setEmailErr(''); setNewEmail(''); }}
                                 className="px-4 py-2.5 text-xs font-bold rounded-xl text-slate-400"
-                                style={{ background: 'rgba(255,255,255,0.07)' }}>← Back</button>
+                                style={{ background: 'rgba(255,255,255,0.07)' }}>Cancel</button>
                             </div>
                           </div>
                         )}
                       </div>
                       <div className="sm:col-span-2">
-                        <button onClick={handleUpdateInfo} disabled={updatingInfo} className={btn}
-                          style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)', boxShadow: '0 4px 20px rgba(14,165,233,0.3)' }}>
-                          {updatingInfo ? 'Saving...' : 'Save Changes'}
+                        <button onClick={handleUpdateInfo} disabled={updatingInfo || emailStep !== 'idle'} className={btn}
+                          style={{ background: emailStep !== 'idle' ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #0ea5e9, #0369a1)', boxShadow: emailStep !== 'idle' ? 'none' : '0 4px 20px rgba(14,165,233,0.3)', cursor: emailStep !== 'idle' ? 'not-allowed' : 'pointer' }}>
+                          {updatingInfo ? 'Saving...' : emailStep !== 'idle' ? 'Complete email verification first' : 'Save Changes'}
                         </button>
+                        {emailStep !== 'idle' && (
+                          <p className="text-xs text-yellow-400 mt-2 text-center">⚠ Please complete or cancel the email change before saving.</p>
+                        )}
                       </div>
                     </div>
                   ) : (

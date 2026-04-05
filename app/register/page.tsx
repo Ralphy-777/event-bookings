@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { API_BASE } from '@/lib/api';
 
 const iStyle = { background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(14,165,233,0.2)' };
-const iCls = "w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-sky-500 transition-all text-sm";
+const iCls = "w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-sky-500 transition-all text-sm capitalize";
 const lCls = "block text-xs font-bold text-sky-400 uppercase tracking-widest mb-2";
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
@@ -89,8 +89,9 @@ export default function ClientRegister() {
         setPendingEmail(email);
         setStep('verify');
         startCooldown();
-        // If email failed to send, show the code directly on the verify screen
-        if (!data.email_sent && data.code) {
+        if (data.already_pending) {
+          setResendMsg('A code was already sent to this email. Check your inbox or click Resend.');
+        } else if (!data.email_sent && data.code) {
           setCode(data.code);
           setResendMsg(`Email could not be sent. Your code is: ${data.code}`);
         }
@@ -274,14 +275,16 @@ export default function ClientRegister() {
               <div key={f.label}>
                 <label className={lCls}>{f.label}</label>
                 <input type={f.type} value={f.value} onChange={e => f.setter(e.target.value)} required
-                  placeholder={f.placeholder} className={iCls} style={f.type === 'date' ? { ...iStyle, colorScheme: 'dark' } : iStyle} />
+                  placeholder={f.placeholder} className={iCls}
+                  autoCapitalize={f.type === 'text' ? 'words' : 'off'}
+                  style={f.type === 'date' ? { ...iStyle, colorScheme: 'dark' } : iStyle} />
               </div>
             ))}
 
             <div className="col-span-1 sm:col-span-2">
               <label className={lCls}>Address</label>
               <input type="text" value={address} onChange={e => setAddress(e.target.value)} required
-                placeholder="Your full address" className={iCls} style={iStyle} />
+                placeholder="Your full address" className={iCls} style={iStyle} autoCapitalize="words" />
             </div>
 
             <div>

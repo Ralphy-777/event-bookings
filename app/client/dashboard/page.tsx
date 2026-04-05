@@ -10,11 +10,11 @@ const VENUE_LOCATION = "Ralphy's Venue, Basak San Nicolas Villa Kalubihan Cebu C
 
 interface EventType {
   id: number; event_type: string; price: number;
-  max_capacity: number; people_per_table: number; description: string;
+  max_capacity: number; max_invited_emails: number; people_per_table: number; description: string;
 }
 
 const iStyle = { background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' };
-const iCls = "w-full h-12 px-4 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all text-sm";
+const iCls = "w-full h-12 px-4 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all text-sm capitalize";
 const lCls = "block text-xs font-bold text-sky-400 uppercase tracking-widest mb-2";
 
 export default function ClientDashboard() {
@@ -83,6 +83,14 @@ export default function ClientDashboard() {
       .catch(() => {}).finally(() => setLoading(false));
   }, [eventType, numPeopleInvited, date, router]);
 
+  const MAX_INVITE_EMAILS = selectedEventType?.max_invited_emails ?? 50;
+
+  // Count valid emails in the invited emails field
+  const invitedEmailCount = invitedEmails
+    ? invitedEmails.split(',').map(e => e.trim()).filter(e => e.length > 0).length
+    : 0;
+  const emailLimitExceeded = invitedEmailCount > MAX_INVITE_EMAILS;
+
   const handleBookingRequest = async () => {
     // Validate required fields (special requests and guest emails are optional)
     const fields = getEventFields();
@@ -96,6 +104,7 @@ export default function ClientDashboard() {
       alert('Please fill in all required fields'); return;
     }
     if (description.length < 10) { setDescriptionError('Description must be at least 10 characters'); return; }
+    if (emailLimitExceeded) { alert(`You can only invite up to ${MAX_INVITE_EMAILS} guests by email.`); return; }
     setSubmitting(true);
     const token = localStorage.getItem('clientToken');
     if (!token) { alert('Session expired.'); router.push('/signin'); return; }
@@ -227,7 +236,8 @@ export default function ClientDashboard() {
                     <label className={lCls}>{f.label} <span className="text-red-400">*</span></label>
                     <input type={f.type} value={eventDetails[f.key] || ''}
                       onChange={e => setEventDetails(prev => ({ ...prev, [f.key]: e.target.value }))}
-                      placeholder={f.placeholder} className={iCls} style={iStyle} />
+                      placeholder={f.placeholder} className={iCls} style={iStyle}
+                      autoCapitalize={f.type === 'text' ? 'words' : 'off'} />
                   </div>
                 ))}
 
@@ -249,18 +259,26 @@ export default function ClientDashboard() {
                   <p className="text-xs text-slate-500 mt-1">Any special arrangements or requirements for your event.</p>
                 </div>
 
-                <div>
-                  <label className={lCls}>Guest Email Invitations <span className="text-slate-500 normal-case font-normal">(optional)</span></label>
-                  <textarea
-                    value={invitedEmails}
-                    onChange={e => setInvitedEmails(e.target.value)}
-                    placeholder="Enter guest emails separated by commas&#10;e.g. friend1@gmail.com, friend2@gmail.com"
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all resize-none text-sm"
-                    style={iStyle}
-                  />
-                  <p className="text-xs text-slate-500 mt-1">Each guest will receive an invitation email when you book, and a confirmation email when approved.</p>
-                </div>
+                  <div>
+                    <label className={lCls}>Guest Email Invitations <span className="text-slate-500 normal-case font-normal">(optional)</span></label>
+                    <textarea
+                      value={invitedEmails}
+                      onChange={e => setInvitedEmails(e.target.value)}
+                      placeholder="Enter guest emails separated by commas&#10;e.g. friend1@gmail.com, friend2@gmail.com"
+                      rows={3}
+                      className={`w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all resize-none text-sm ${emailLimitExceeded ? 'focus:ring-red-500 ring-2 ring-red-500' : 'focus:ring-sky-500'}`}
+                      style={{ ...iStyle, border: emailLimitExceeded ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.12)' }}
+                    />
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs text-slate-500">Each guest will receive an invitation email when you book. {selectedEventType ? `Max ${MAX_INVITE_EMAILS} for ${selectedEventType.event_type}.` : ''}</p>
+                      <p className={`text-xs font-bold ${emailLimitExceeded ? 'text-red-400' : invitedEmailCount >= MAX_INVITE_EMAILS - 2 ? 'text-yellow-400' : 'text-slate-500'}`}>
+                        {invitedEmailCount}/{MAX_INVITE_EMAILS}
+                      </p>
+                    </div>
+                    {emailLimitExceeded && (
+                      <p className="text-xs text-red-400 mt-1">Maximum {MAX_INVITE_EMAILS} email invitations allowed for {selectedEventType?.event_type}. Please remove {invitedEmailCount - MAX_INVITE_EMAILS} email(s).</p>
+                    )}
+                  </div>
 
                 <div>
                   <label className={lCls}>Number of Guests</label>
