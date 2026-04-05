@@ -32,7 +32,6 @@ export default function ClientRegister() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingMsg, setLoadingMsg] = useState('Creating Account...');
   const [step, setStep] = useState<'form' | 'verify' | 'success'>('form');
   const [pendingEmail, setPendingEmail] = useState('');
   const [code, setCode] = useState('');
@@ -69,21 +68,13 @@ export default function ClientRegister() {
     setError('');
     if (password !== confirmPassword) { setError('Passwords do not match'); return; }
     setLoading(true);
-    setLoadingMsg('Creating Account...');
-
-    const wakeTimer = setTimeout(() => setLoadingMsg('Server is waking up, please wait... (this may take up to 60 seconds)'), 5000);
-    const wakeTimer2 = setTimeout(() => setLoadingMsg('Almost there, still waking up the server...'), 30000);
-
     try {
       const res = await fetchWithRetry(`${API_BASE}/register/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ first_name: firstName, last_name: lastName, date_of_birth: dob, address, email, password }),
       });
-      if (!res.ok) {
-        setError(await getErrorMessage(res, 'Registration failed'));
-        return;
-      }
+      if (!res.ok) { setError(await getErrorMessage(res, 'Registration failed')); return; }
       const data = await res.json();
       if (data.requires_verification) {
         setPendingEmail(email);
@@ -95,18 +86,10 @@ export default function ClientRegister() {
       } else {
         setError(data.message || 'Registration failed');
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('timeout') || msg.includes('fetch') || msg.includes('network') || msg.toLowerCase().includes('failed')) {
-        setError('Server is taking too long to respond. Please try again.');
-      } else {
-        setError(`Connection error. ${msg}`);
-      }
+    } catch {
+      setError('Connection error. Please check your internet and try again.');
     } finally {
-      clearTimeout(wakeTimer);
-      clearTimeout(wakeTimer2);
       setLoading(false);
-      setLoadingMsg('Creating Account...');
     }
   };
 
@@ -208,8 +191,7 @@ export default function ClientRegister() {
             </div>
             <h1 className="text-xl font-black text-white mb-1">Verify Your Email</h1>
             <p className="text-xs text-slate-400 mb-1">We sent a 6-digit code to:</p>
-            <p className="font-bold text-sky-400 text-sm mb-2">{pendingEmail}</p>
-            <p className="text-xs text-yellow-400 mb-6">The email may take 1-2 minutes to arrive. If you don't see it, check your spam folder or click Resend.</p>
+            <p className="font-bold text-sky-400 text-sm mb-6">{pendingEmail}</p>
             <form onSubmit={handleVerify} className="space-y-4">
               <div>
                 <label className={lCls}>Verification Code</label>
@@ -311,7 +293,7 @@ export default function ClientRegister() {
                 style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)', boxShadow: '0 4px 20px rgba(14,165,233,0.3)' }}>
                 <span className="flex items-center justify-center gap-2">
                   {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                  {loading ? loadingMsg : 'Create Account'}
+                  {loading ? 'Creating Account...' : 'Create Account'}
                 </span>
               </button>
             </div>
