@@ -37,6 +37,7 @@ export default function ClientDashboard() {
   const [eventDetails, setEventDetails] = useState<Record<string, string>>({});
   const [sessionType, setSessionType] = useState<'half' | 'whole'>('half');
   const [invitedEmails, setInvitedEmails] = useState('');
+  const [specialRequests, setSpecialRequests] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('clientToken');
@@ -94,7 +95,7 @@ export default function ClientDashboard() {
       const res = await fetch(`${API_BASE}/bookings/create/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ event_type: eventType, description, capacity: numPeopleInvited, date, time: wholeDay ? '09:00' : time, whole_day: wholeDay, time_slot: timeSlot, invited_emails: invitedEmails, payment_method: paymentMethod, event_details: eventDetails }),
+        body: JSON.stringify({ event_type: eventType, description, capacity: numPeopleInvited, date, time: wholeDay ? '09:00' : time, whole_day: wholeDay, time_slot: timeSlot, invited_emails: invitedEmails, payment_method: paymentMethod, event_details: eventDetails, special_requests: specialRequests }),
       });
       if (res.status === 401) { localStorage.removeItem('clientToken'); router.push('/signin'); return; }
       if (!res.ok) { const e = await res.json(); alert(e.message || 'Failed to create booking'); setSubmitting(false); return; }
@@ -229,6 +230,15 @@ export default function ClientDashboard() {
                     rows={3} className="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all resize-none text-sm"
                     style={iStyle} />
                   {descriptionError && <p className="mt-1 text-xs text-red-400">{descriptionError}</p>}
+                </div>
+
+                <div>
+                  <label className={lCls}>Special Requests <span className="text-slate-500 normal-case font-normal">(optional)</span></label>
+                  <textarea value={specialRequests} onChange={e => setSpecialRequests(e.target.value)}
+                    placeholder="e.g. Wheelchair access, halal food, specific decorations, sound system..."
+                    rows={3} className="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all resize-none text-sm"
+                    style={iStyle} />
+                  <p className="text-xs text-slate-500 mt-1">Any special arrangements or requirements for your event.</p>
                 </div>
 
                 <div>

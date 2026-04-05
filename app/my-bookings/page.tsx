@@ -12,7 +12,7 @@ interface Booking {
   date: string; time: string; location: string; status: string;
   payment_status: string; payment_method: string; total_amount: number;
   created_at: string; gcash_reference?: string; payment_proof?: string;
-  decline_reason?: string; has_review?: boolean;
+  decline_reason?: string; has_review?: boolean; special_requests?: string;
 }
 
 const iStyle = { background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' };
@@ -244,6 +244,13 @@ export default function MyBookings() {
                     </div>
 
                     <p className="text-xs text-slate-400 mb-4 line-clamp-2 leading-relaxed">{booking.description}</p>
+
+                    {booking.special_requests && (
+                      <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.15)' }}>
+                        <p className="text-xs font-bold text-sky-400 mb-1">Special Requests</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">{booking.special_requests}</p>
+                      </div>
+                    )}
 
                     {/* Details */}
                     <div className="grid grid-cols-2 gap-2 mb-4">
