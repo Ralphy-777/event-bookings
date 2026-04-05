@@ -103,8 +103,12 @@ export default function ProfilePage() {
       body: JSON.stringify({ new_email: newEmail }),
     });
     const d = await res.json();
-    if (res.ok) { setEmailMsg(d.message); setEmailStep('verify'); }
-    else setEmailErr(d.message || 'Failed');
+    if (res.ok) {
+      setEmailMsg(d.message);
+      setEmailStep('verify');
+    } else {
+      setEmailErr(d.message || 'Failed to send code');
+    }
     setEmailLoading(false);
   };
 
@@ -254,6 +258,7 @@ export default function ProfilePage() {
                         {emailStep === 'verify' && (
                           <div className="space-y-2">
                             <p className="text-sky-400 text-xs">A verification code was sent to your <strong>current email</strong> ({userInfo?.email}). Enter it below to confirm the change.</p>
+                            {emailMsg && <p className="text-sky-300 text-xs px-3 py-2 rounded-lg" style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)' }}>{emailMsg}</p>}
                             <input type="text" value={emailCode} onChange={e => setEmailCode(e.target.value.replace(/\D/g, ''))}
                               maxLength={6} placeholder="000000"
                               className="w-full px-4 py-3 rounded-xl border text-center text-2xl tracking-[0.4em] font-black text-white outline-none focus:ring-2 focus:ring-sky-500"
@@ -265,7 +270,7 @@ export default function ProfilePage() {
                                 style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)' }}>
                                 {emailLoading ? 'Verifying...' : 'Verify & Save'}
                               </button>
-                              <button type="button" onClick={() => { setEmailStep('idle'); setEmailCode(''); setEmailErr(''); setNewEmail(''); }}
+                              <button type="button" onClick={() => { setEmailStep('idle'); setEmailCode(''); setEmailErr(''); setEmailMsg(''); setNewEmail(''); }}
                                 className="px-4 py-2.5 text-xs font-bold rounded-xl text-slate-400"
                                 style={{ background: 'rgba(255,255,255,0.07)' }}>Cancel</button>
                             </div>
