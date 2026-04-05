@@ -84,6 +84,14 @@ export default function ClientDashboard() {
   }, [eventType, numPeopleInvited, date, router]);
 
   const handleBookingRequest = async () => {
+    // Validate required fields (special requests and guest emails are optional)
+    const fields = getEventFields();
+    for (const f of fields) {
+      const val = (eventDetails[f.key] || '').toString().trim();
+      if (!val) {
+        alert(`Please fill in: ${f.label}`); return;
+      }
+    }
     if (!eventType || !description || !numPeopleInvited || !date || (!wholeDay && !time) || !paymentMethod) {
       alert('Please fill in all required fields'); return;
     }
@@ -216,7 +224,7 @@ export default function ClientDashboard() {
 
                 {selectedEventType && getEventFields().map(f => (
                   <div key={f.key}>
-                    <label className={lCls}>{f.label}</label>
+                    <label className={lCls}>{f.label} <span className="text-red-400">*</span></label>
                     <input type={f.type} value={eventDetails[f.key] || ''}
                       onChange={e => setEventDetails(prev => ({ ...prev, [f.key]: e.target.value }))}
                       placeholder={f.placeholder} className={iCls} style={iStyle} />
@@ -224,7 +232,7 @@ export default function ClientDashboard() {
                 ))}
 
                 <div>
-                  <label className={lCls}>Event Description</label>
+                  <label className={lCls}>Event Description <span className="text-red-400">*</span></label>
                   <textarea value={description} onChange={e => setDescription(e.target.value)}
                     placeholder="Describe your event — theme, purpose, occasion details..."
                     rows={3} className="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all resize-none text-sm"
