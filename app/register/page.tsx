@@ -85,7 +85,16 @@ export default function ClientRegister() {
         return;
       }
       const data = await res.json();
-      if (data.requires_verification) { setPendingEmail(email); setStep('verify'); startCooldown(); }
+      if (data.requires_verification) {
+        setPendingEmail(email);
+        setStep('verify');
+        startCooldown();
+        // If email failed to send, show the code directly on the verify screen
+        if (!data.email_sent && data.code) {
+          setCode(data.code);
+          setResendMsg(`Email could not be sent. Your code is: ${data.code}`);
+        }
+      }
       else { setError(data.message || 'Registration failed'); }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
