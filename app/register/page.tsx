@@ -257,10 +257,10 @@ export default function ClientRegister() {
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { label: 'First Name', value: firstName, setter: setFirstName, type: 'text', placeholder: 'John' },
-              { label: 'Last Name', value: lastName, setter: setLastName, type: 'text', placeholder: 'Doe' },
+              { label: 'First Name', value: firstName, setter: setFirstName, type: 'text', placeholder: 'First Name' },
+              { label: 'Last Name', value: lastName, setter: setLastName, type: 'text', placeholder: 'Last Name' },
               { label: 'Date of Birth', value: dob, setter: setDob, type: 'date', placeholder: '' },
-              { label: 'Email Address', value: email, setter: setEmail, type: 'email', placeholder: 'john@email.com' },
+              { label: 'Email Address', value: email, setter: setEmail, type: 'email', placeholder: 'Email Address' },
             ].map(f => (
               <div key={f.label}>
                 <label className={lCls}>{f.label}</label>

@@ -123,32 +123,32 @@ export default function ClientDashboard() {
 
     // Base fields every event gets
     const base = [
-      { key: 'first_name', label: 'First Name', placeholder: 'e.g. Ralph', type: 'text' },
-      { key: 'last_name', label: 'Last Name', placeholder: 'e.g. Villarojo', type: 'text' },
+      { key: 'first_name', label: 'First Name', placeholder: 'First Name', type: 'text' },
+      { key: 'last_name', label: 'Last Name', placeholder: 'Last Name', type: 'text' },
     ];
 
     // Extra fields for specific event types
     if (et.includes('birthday')) return [
-      { key: 'celebrant_first_name', label: "Celebrant's First Name", placeholder: 'e.g. Ralph', type: 'text' },
-      { key: 'celebrant_last_name', label: "Celebrant's Last Name", placeholder: 'e.g. Villarojo', type: 'text' },
-      { key: 'celebrant_age', label: 'Age', placeholder: 'e.g. 18', type: 'number' },
+      { key: 'celebrant_first_name', label: "Celebrant's First Name", placeholder: 'First Name', type: 'text' },
+      { key: 'celebrant_last_name', label: "Celebrant's Last Name", placeholder: 'Last Name', type: 'text' },
+      { key: 'celebrant_age', label: 'Age', placeholder: 'Age', type: 'number' },
     ];
     if (et.includes('wedding')) return [
-      { key: 'bride_first_name', label: "Bride's First Name", placeholder: 'e.g. Sandra', type: 'text' },
-      { key: 'bride_last_name', label: "Bride's Last Name", placeholder: 'e.g. Villarojo', type: 'text' },
-      { key: 'groom_first_name', label: "Groom's First Name", placeholder: 'e.g. Ralph', type: 'text' },
-      { key: 'groom_last_name', label: "Groom's Last Name", placeholder: 'e.g. Villarojo', type: 'text' },
+      { key: 'bride_first_name', label: "Bride's First Name", placeholder: 'First Name', type: 'text' },
+      { key: 'bride_last_name', label: "Bride's Last Name", placeholder: 'Last Name', type: 'text' },
+      { key: 'groom_first_name', label: "Groom's First Name", placeholder: 'First Name', type: 'text' },
+      { key: 'groom_last_name', label: "Groom's Last Name", placeholder: 'Last Name', type: 'text' },
     ];
     if (et.includes('christening')) return [
-      { key: 'child_first_name', label: "Child's First Name", placeholder: 'e.g. Ralph', type: 'text' },
-      { key: 'child_last_name', label: "Child's Last Name", placeholder: 'e.g. Villarojo', type: 'text' },
-      { key: 'parent_first_name', label: "Parent's First Name", placeholder: 'e.g. Sandra', type: 'text' },
-      { key: 'parent_last_name', label: "Parent's Last Name", placeholder: 'e.g. Villarojo', type: 'text' },
+      { key: 'child_first_name', label: "Child's First Name", placeholder: 'First Name', type: 'text' },
+      { key: 'child_last_name', label: "Child's Last Name", placeholder: 'Last Name', type: 'text' },
+      { key: 'parent_first_name', label: "Parent's First Name", placeholder: 'First Name', type: 'text' },
+      { key: 'parent_last_name', label: "Parent's Last Name", placeholder: 'Last Name', type: 'text' },
     ];
     if (et.includes('corporate')) return [
-      { key: 'company_name', label: 'Company Name', placeholder: 'e.g. Villarojo Corp', type: 'text' },
-      { key: 'contact_first_name', label: 'Contact First Name', placeholder: 'e.g. Ralph', type: 'text' },
-      { key: 'contact_last_name', label: 'Contact Last Name', placeholder: 'e.g. Villarojo', type: 'text' },
+      { key: 'company_name', label: 'Company Name', placeholder: 'Company Name', type: 'text' },
+      { key: 'contact_first_name', label: 'Contact First Name', placeholder: 'First Name', type: 'text' },
+      { key: 'contact_last_name', label: 'Contact Last Name', placeholder: 'Last Name', type: 'text' },
     ];
 
     // Any other new event type automatically gets First Name + Last Name
@@ -226,7 +226,7 @@ export default function ClientDashboard() {
                 <div>
                   <label className={lCls}>Event Description</label>
                   <textarea value={description} onChange={e => setDescription(e.target.value)}
-                    placeholder="Describe your event — theme, purpose, special requests..."
+                    placeholder="Describe your event — theme, purpose, occasion details..."
                     rows={3} className="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all resize-none text-sm"
                     style={iStyle} />
                   {descriptionError && <p className="mt-1 text-xs text-red-400">{descriptionError}</p>}
