@@ -65,14 +65,14 @@ export default function SignIn() {
     return `${Math.floor(r / 60)}:${(r % 60).toString().padStart(2, '0')}`;
   };
 
-  const fetchWithRetry = async (url: string, options: RequestInit, retries = 2): Promise<Response> => {
+  const fetchWithRetry = async (url: string, options: RequestInit, retries = 3): Promise<Response> => {
     for (let i = 0; i <= retries; i++) {
       try {
-        return await fetch(url, { ...options, signal: AbortSignal.timeout(30000) });
+        return await fetch(url, { ...options, signal: AbortSignal.timeout(90000) });
       } catch (err) {
         if (i === retries) throw err;
         setError('Server is waking up, retrying...');
-        await new Promise(r => setTimeout(r, 3000));
+        await new Promise(r => setTimeout(r, 5000));
       }
     }
     throw new Error('Failed after retries');

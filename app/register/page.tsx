@@ -8,14 +8,14 @@ const iStyle = { background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(1
 const iCls = "w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-sky-500 transition-all text-sm capitalize";
 const lCls = "block text-xs font-bold text-sky-400 uppercase tracking-widest mb-2";
 
-async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3): Promise<Response> {
   for (let i = 0; i <= retries; i++) {
     try {
-      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(30000) });
+      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(90000) });
       return res;
     } catch (err) {
       if (i === retries) throw err;
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise(r => setTimeout(r, 5000));
     }
   }
   throw new Error('Failed after retries');
@@ -71,8 +71,8 @@ export default function ClientRegister() {
     setLoading(true);
     setLoadingMsg('Creating Account...');
 
-    // Show "waking up server" message after 5s if still loading
-    const wakeTimer = setTimeout(() => setLoadingMsg('Waking up server, please wait...'), 5000);
+    const wakeTimer = setTimeout(() => setLoadingMsg('Server is waking up, please wait... (this may take up to 60 seconds)'), 5000);
+    const wakeTimer2 = setTimeout(() => setLoadingMsg('Almost there, still waking up the server...'), 30000);
 
     try {
       const res = await fetchWithRetry(`${API_BASE}/register/`, {
@@ -91,21 +91,20 @@ export default function ClientRegister() {
         startCooldown();
         if (data.already_pending) {
           setResendMsg('A code was already sent to this email. Check your inbox or click Resend.');
-        } else if (!data.email_sent && data.code) {
-          setCode(data.code);
-          setResendMsg(`Email could not be sent. Your code is: ${data.code}`);
         }
+      } else {
+        setError(data.message || 'Registration failed');
       }
-      else { setError(data.message || 'Registration failed'); }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('timeout') || msg.includes('fetch') || msg.includes('network') || msg.toLowerCase().includes('failed')) {
-        setError('The server is starting up. Please wait 30 seconds and try again.');
+        setError('Server is taking too long to respond. Please try again.');
       } else {
         setError(`Connection error. ${msg}`);
       }
     } finally {
       clearTimeout(wakeTimer);
+      clearTimeout(wakeTimer2);
       setLoading(false);
       setLoadingMsg('Creating Account...');
     }
@@ -209,7 +208,8 @@ export default function ClientRegister() {
             </div>
             <h1 className="text-xl font-black text-white mb-1">Verify Your Email</h1>
             <p className="text-xs text-slate-400 mb-1">We sent a 6-digit code to:</p>
-            <p className="font-bold text-sky-400 text-sm mb-6">{pendingEmail}</p>
+            <p className="font-bold text-sky-400 text-sm mb-2">{pendingEmail}</p>
+            <p className="text-xs text-yellow-400 mb-6">The email may take 1-2 minutes to arrive. If you don't see it, check your spam folder or click Resend.</p>
             <form onSubmit={handleVerify} className="space-y-4">
               <div>
                 <label className={lCls}>Verification Code</label>
